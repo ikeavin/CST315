@@ -12,6 +12,61 @@
 //learnc.org
 //Effective C by Robert Seacord
 
+
+//Memory management based on:
+//c-sharpcorner.com/article/writing-our-own-memory-manager
+typedef struct __page_frame {
+	struct __page_frame *next;
+	size_t size;
+	void *memory_address;	
+ } _PAGE_FRAME;
+
+#define FRAME_SIZE sizeof(_PAGE_FRAME)
+
+_PAGE_FRAME *allocateMemory(size_t size) {
+	_PAGE_FRAME *frame = (_PAGE_FRAME*)sbrk(0);
+	void *new_memory_address = (void*)sbrk(0);
+	void *allocate_mem = (void*)sbrk(FRAME_SIZE + size);
+
+	if(allocate_mem == (void*)-1) {
+		return NULL;
+	} else {
+		frame->next = NULL;
+		frame->size = size;
+		frame->memory_address = new_memory_address + FRAME_SIZE;
+		return frame;
+	}
+}
+
+void allocateNextMemoryBlock(size_t size, _PAGE_FRAME  **head) {
+	_PAGE_FRAME *current = *head;
+	void *allocate_mem = NULL;
+	void *memadr = (void*)sbrk(0);
+
+	if(current == NULL) {
+		*head = allocateMemory(size);
+	} else {
+		while(current->next != NULL) {
+			current = current->next;
+		}
+		_PAGE_FRAME *newFrame = sbrk(0);
+		
+		allocate_mem = (void*)sbrk(FRAME_SIZE + size);
+		if(allocate_mem != (void*) - 1) {
+			newFrame->next = NULL;
+			newFrame->size = size;
+			newFrame->memory_address = memadr + FRAME_SIZE;
+			current->next = newFrame;
+		}
+	}
+}
+
+void freeMemoryBlock(_PAGE_FRAME **head) {
+	if(*head != NULL) {
+		(*head)->size = -1;
+	}
+}
+ 
 void cd(char* dir, char** parseDir) {
 	int i;
 	for(i = 0; i < 100; i++) {
